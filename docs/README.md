@@ -1,7 +1,8 @@
 
 # UVic MUSE
 
-An application for streaming data from MUSE headsets to MATLAB and other platforms via LSL or UDP. An important update - this version is for OSX only and DOES NOT require a BLED112 dongle.
+An application for streaming from MUSE headsets to MATLAB and other 
+platforms. 
 
 ## Software Requirements
 
@@ -16,10 +17,14 @@ and then the Issues section of [this](https://github.com/bardiabarabadi/uvicMUSE
 
 ## Hardware Requirements
 
-** Compatible with all MUSE versions.
+** Compatible with MUSE _MU-02_ and _MU-03_
 
 ##### MacOS:
 This app uses the built-in bluetooth hardware to communicate with MUSE. No extra hardware is required.
+
+##### Windows & Linux:
+UVic MUSE requires an USB dongle (use [BLED112](http://www.farnell.com/datasheets/2674198.pdf?_ga=2.79024144.587051681.1584504877-1039421750.1584504877&_gac=1.255907449.1584504893.Cj0KCQjw6sHzBRCbARIsAF8FMpWVas72rjYW8HkIbpjfUe97CBonZR71Yi22iGbSvDSER9rcJJ1JbqsaAit0EALw_wcB) 
+for the best results) to communicate with MUSE on windows and Linux. **Make sure you install the correct version.**
 
 ## Getting Started
 
@@ -65,8 +70,8 @@ Install dependencies
     
 Install UVicMUSE using `pip`
 
-    pip install --force-reinstall uvicmuse==3.1.1 # for Windows & Linux (with dongle)
-    pip install --force-reinstall uvicmuse==5.0.0 # for macOS (built-in bluetooth)
+    pip install --force-reinstall uvicmuse==3.2.2 # for Windows & Linux (with dongle)
+    pip install --force-reinstall uvicmuse==5.2.1 # for macOS (built-in bluetooth)
     
     
 #### Running UVicMUSE:
@@ -135,6 +140,47 @@ We suggest using multiple instances of `get_xxx_chunk()`, but you can change the
     
     mu.set_udp_buffer_size(2048) % 2kB buffer
 
+## Pyhton Library
+ If you wan to use MUSE's sensory data in python, you can use uvicmuse as a python library. Here is how it works:
+ 
+ First you need to import the `MuseWrapper` class into your code. Also, you will going to need the `asyncio` library.
+ 
+    from uvicmuse.MuseWrapper import MuseWrapper as MW
+    import asyncio
+ Now get the event loop using the `get_even_loop` method and pass it to the `MuseWrapper`.
+ 
+    loop = asyncio.get_event_loop()
+    M_wrapper = MW (loop = loop,
+                    target_name = None,
+                    timeout = 10,
+                    max_buff_len = 500) 
+ Let's take a look at all of the entries of the `MuseWrapper`:
+ 
+ **Loop**: The event loop, use get_event_loop to acquire
+ 
+ **target_name**: (optional) Use if you want to connect to a specific device. You can use `"Muse-3BEA"` or `"3BEA"`. Leave this input empty (or `None`) if there is only one device in range. You will get an error if there are more than one devices available and this input is empty.
+ 
+ **timeout**: (optional) The timeout for the search. May need to be increase according to the BT device and/or the BT traffic. 
+ 
+ **max_buff_size**: (optional) The maximum number of samples that to be temporary saved in the internal buffer. Default is 512.
+
+The next step is to search for the target MUSE and connect to it:
+    
+    M_wrapper.search_and_connect() # returnes True if the connection is successful
+    
+Finally you can go ahead and read samples from the MUSE:
+
+    EEG_data = M_wrapper.pull_eeg()
+    PPG_data = M_wrapper.pull_ppg() # Not available in MU-02
+    ACC_data = M_wrapper.pull_acc()
+    GYRO_data = M_wrapper.pull_gyro()
+
+The output is a list of samples each containing 5 (for EEG) or 3 (for others) values followed by a timestamp. The buffers reset automatically when read.
+
+To disconnect the MUSE, use:
+
+    M_wrapper.disconnect()
+
 ## Issues
 
 On MacOSx: Application crashes after running:
@@ -147,7 +193,7 @@ On MacOSx: Application crashes after running:
 
 ```
 @misc{UVicMUSE,
-  author       = {Bardia Barabadi,Olave Krigolson},
+  author       = {Bardia Barabadi},
   title        = {uvic-muse},
   month        = March,
   year         = 2020,
